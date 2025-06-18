@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using WebApplication1.Models;
 
 namespace WebApplication1.Services.Interfaces
 {
@@ -10,6 +11,6 @@ namespace WebApplication1.Services.Interfaces
     Task<Company> CreateAsync(Company company);
     Task<List<Company>> GetAllAsync();
     Task<Company> GetByIdAsync(Guid id);
-    Task UpdateAsync(Company company);
+    Task<Company> UpdateAsync(Company company);
   }
 }
