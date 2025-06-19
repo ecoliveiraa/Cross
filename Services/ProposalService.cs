@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebApplication1.Models;
 using WebApplication1.Services.Interfaces;
+using WebApplication1.Validation;
 
 namespace WebApplication1.Services
 {
@@ -12,31 +13,35 @@ namespace WebApplication1.Services
         private readonly IProductService _productService;
         private readonly ICompanyService _companyService;
         private readonly ILeadService _leadService;
+        private readonly IRuleManager _ruleManager;
 
         public ProposalService(
             IProposalRepository proposalRepository,
             IProductService productService, 
             ICompanyService companyService, 
-            ILeadService leadService)
+            ILeadService leadService,
+            IRuleManager ruleManager)
         {
             _proposalRepository = proposalRepository;
             _productService = productService;
             _companyService = companyService;
             _leadService = leadService;
+            _ruleManager = ruleManager;
         }
 
         public async Task<Proposal> CreateAsync(Proposal proposal)
         {
+            // VALIDAÇÃO DINÂMICA
+            var validationResult = _ruleManager.Validate(proposal);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(string.Join(", ", validationResult.Errors));
+            }
+
             // Validação: verificar se o Lead existe
             var lead = await _leadService.GetByIdAsync(proposal.LeadID);
             if (lead == null)
                 return null;
-
-            // Lógica de negócio: preencher dados do Lead na Proposal
-            // (assumindo que o modelo Proposal tem estes campos - se não tiver, remove)
-            // proposal.CompanyId = lead.CompanyId;
-            // proposal.Country = lead.Country;
-            // proposal.BusinessType = lead.BusinessType;
 
             // Garantir que tem ID
             if (proposal.ProposalID == Guid.Empty)
@@ -66,6 +71,13 @@ namespace WebApplication1.Services
 
         public async Task<Proposal> UpdateAsync(Proposal proposal)
         {
+            // VALIDAÇÃO DINÂMICA também no UPDATE
+            var validationResult = _ruleManager.Validate(proposal);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(string.Join(", ", validationResult.Errors));
+            }
+
             // Validação se existe
             var existing = await _proposalRepository.GetByIdAsync(proposal.ProposalID);
             if (existing == null)
@@ -109,6 +121,14 @@ namespace WebApplication1.Services
 
             // Atualizar status da proposal
             proposal.Status = "Finalized";
+            
+            // VALIDAÇÃO DINÂMICA antes de finalizar
+            var validationResult = _ruleManager.Validate(proposal);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException($"Cannot finalize proposal: {string.Join(", ", validationResult.Errors)}");
+            }
+
             await _proposalRepository.UpdateAsync(proposal);
 
             // Atualizar status da company para "Active"
