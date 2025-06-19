@@ -5,7 +5,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Services.Interfaces
 {
-    public interface ILeadService
+    public interface ILeadRepository
     {
         Task<Lead> CreateAsync(Lead lead);
         Task<List<Lead>> GetAllAsync();

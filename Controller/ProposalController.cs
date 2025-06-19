@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
-using WebApplication1.Models.DTOs;
 using WebApplication1.Services.Interfaces;
 
 namespace WebApplication1.Controller
@@ -14,47 +11,21 @@ namespace WebApplication1.Controller
     public class ProposalController : ControllerBase
     {
         private readonly IProposalService _proposalService;
-        private readonly ILeadService _leadService;
 
-        public ProposalController(IProposalService proposalService, ILeadService leadService)
+        public ProposalController(IProposalService proposalService)
         {
             _proposalService = proposalService;
-            _leadService = leadService;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ProposalCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] Proposal proposal)
         {
-            if (dto == null) 
-            return BadRequest("Proposal data is required.");
-            var lead = await _leadService.GetLeadByIdAsync(dto.LeadID);
-            if( lead == null) return NotFound("Lead not found.");
-
-
-            var proposal = new Proposal
-            {
-                LeadID = dto.LeadID,
-                ProductIDs = dto.ProductIDs,
-                ProductionCost = dto.ProductionCost,
-                MonthlyProducedProducts = dto.MonthlyProducedProducts,
-                ExpectedMonthlyProfit = dto.ExpectedMonthlyProfit,
-                CompanyId = lead.CompanyId,
-                Country = lead.Country,
-                BusinessType = lead.BusinessType
-            };
-            if( proposal == null) return NotFound("Lead not found.");
-
-            
-
-            
+            if (proposal == null) 
+                return BadRequest("Proposal data is required.");
 
             var created = await _proposalService.CreateAsync(proposal);
-
-            // Update the lead status to "Finalized" after creating the proposal   
-            //TODO: Ver se esta bem
-            if(created == null) return NotFound("Proposal not created.");
-            lead.Status="Finalized";
-            await _leadService.UpdateLeadAsync(lead);
+            if (created == null) 
+                return NotFound("Lead not found.");
 
             return CreatedAtAction(nameof(GetById), new { id = created.ProposalID }, created);
         }
@@ -74,43 +45,15 @@ namespace WebApplication1.Controller
             return Ok(proposal);
         }
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] ProposalUpdateDto dto)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] Proposal proposal)
         {
-            var existing = await _proposalService.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+            proposal.ProposalID = id;
 
-            if (dto.LeadID.HasValue)
-            {
-                existing.LeadID = dto.LeadID.Value;
-            }
-            if (dto.ProductIDs != null)
-            {
-                existing.ProductIDs = dto.ProductIDs;
+            var updated = await _proposalService.UpdateAsync(proposal);
+            if (updated == null) return NotFound();
 
-            }
-            if (dto.ProductionCost != null)
-            {
-                existing.ProductionCost = dto.ProductionCost.Value;
-            }
-            if (dto.MonthlyProducedProducts != null)
-            {
-                existing.MonthlyProducedProducts = dto.MonthlyProducedProducts.Value;
-            }
-            if (dto.ExpectedMonthlyProfit != null)
-            {
-                existing.ExpectedMonthlyProfit = dto.ExpectedMonthlyProfit.Value;
-            }
-            if (dto.Status != null)
-            {
-                existing.Status = dto.Status;
-            }
-
-            var updated = await _proposalService.UpdateAsync(existing);
             return Ok(updated);
-
-
-            
         }
 
         [HttpPost("{proposalId}/add-product/{productId}")]

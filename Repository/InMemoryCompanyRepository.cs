@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using WebApplication1.Models;
 using WebApplication1.Services.Interfaces;
 
-namespace WebApplication1.Services.InMemory
+namespace WebApplication1.Repository
 {
-    public class InMemoryCompanyService : ICompanyService
+    public class InMemoryCompanyRepository : ICompanyRepository
     {
         private readonly List<Company> _companies = new();
 
@@ -27,12 +27,7 @@ namespace WebApplication1.Services.InMemory
             var existing = _companies.FirstOrDefault(c => c.Id == company.Id);
             if (existing != null)
             {
-                existing.NIF = company.NIF;
-                existing.Address = company.Address;
-                existing.Country = company.Country;
-                existing.Status = company.Status;
-                existing.Stakeholder = company.Stakeholder;
-                existing.Contact = company.Contact;
+                _companies[_companies.IndexOf(existing)] = company;
             }
             return Task.FromResult(company);
         }

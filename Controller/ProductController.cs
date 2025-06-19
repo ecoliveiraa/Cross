@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
-using WebApplication1.Models.DTOs;
 using WebApplication1.Services.Interfaces;
 
 namespace WebApplication1.Controller
@@ -24,6 +21,9 @@ namespace WebApplication1.Controller
         public async Task<IActionResult> Create([FromBody] Product product)
         {
             var created = await _productService.CreateAsync(product);
+            if (created == null)
+                return BadRequest("Invalid dependent product reference.");
+
             return CreatedAtAction(nameof(GetById), new { id = created.ProductID }, created);
         }
 
@@ -42,22 +42,14 @@ namespace WebApplication1.Controller
             return Ok(product);
         }
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] ProductUpdateDto dto
-            )
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] Product product)
         {
-            var existing = await _productService.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+            product.ProductID = id;
 
-            if (dto.ProductType != null)
-            {
-                existing.ProductType = dto.ProductType;
-            }
-            if (dto.DependentProductId != null)
-            {
-                existing.DependentProductId = dto.DependentProductId;
-            }
-            var updated = await _productService.UpdateAsync(existing);
+            var updated = await _productService.UpdateAsync(product);
+            if (updated == null) return NotFound();
+
             return Ok(updated);
         }
     }

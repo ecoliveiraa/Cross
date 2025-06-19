@@ -5,7 +5,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Services.Interfaces
 {
-    public interface ICompanyService 
+    public interface ICompanyRepository
     {
         Task<Company> CreateAsync(Company company);
         Task<List<Company>> GetAllAsync();

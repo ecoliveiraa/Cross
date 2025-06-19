@@ -5,11 +5,11 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Services.Interfaces
 {
-    public interface IProductService
+    public interface IProductRepository
     {
         Task<Product> CreateAsync(Product product);
-        Task<Product> GetByIdAsync(Guid id);
         Task<List<Product>> GetAllAsync();
+        Task<Product> GetByIdAsync(Guid id);
         Task<Product> UpdateAsync(Product product);
     }
 }
