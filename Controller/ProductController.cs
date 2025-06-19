@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Services.Interfaces;
+using WebApplication1.Validation;
 
 namespace WebApplication1.Controller
 {
@@ -20,11 +21,18 @@ namespace WebApplication1.Controller
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Product product)
         {
-            var created = await _productService.CreateAsync(product);
-            if (created == null)
-                return BadRequest("Invalid dependent product reference.");
+            try
+            {
+                var created = await _productService.CreateAsync(product);
+                if (created == null)
+                    return BadRequest("Invalid dependent product reference.");
 
-            return CreatedAtAction(nameof(GetById), new { id = created.ProductID }, created);
+                return CreatedAtAction(nameof(GetById), new { id = created.ProductID }, created);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet]
@@ -45,12 +53,19 @@ namespace WebApplication1.Controller
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] Product product)
         {
-            product.ProductID = id;
+            try
+            {
+                product.ProductID = id;
 
-            var updated = await _productService.UpdateAsync(product);
-            if (updated == null) return NotFound();
+                var updated = await _productService.UpdateAsync(product);
+                if (updated == null) return NotFound();
 
-            return Ok(updated);
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

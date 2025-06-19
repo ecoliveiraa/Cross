@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Services.Interfaces;
+using WebApplication1.Validation;
 
 namespace WebApplication1.Controller
 {
@@ -20,8 +21,15 @@ namespace WebApplication1.Controller
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Company company)
         {
-            var created = await _companyService.CreateAsync(company);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            try
+            {
+                var created = await _companyService.CreateAsync(company);
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet]
@@ -42,12 +50,19 @@ namespace WebApplication1.Controller
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] Company company)
         {
-            company.Id = id;
-            
-            var updated = await _companyService.UpdateAsync(company);
-            if (updated == null) return NotFound();
-            
-            return Ok(updated);
+            try
+            {
+                company.Id = id;
+                
+                var updated = await _companyService.UpdateAsync(company);
+                if (updated == null) return NotFound();
+                
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

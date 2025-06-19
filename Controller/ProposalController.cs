@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 using WebApplication1.Services.Interfaces;
+using WebApplication1.Validation;
 
 namespace WebApplication1.Controller
 {
@@ -20,14 +21,21 @@ namespace WebApplication1.Controller
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Proposal proposal)
         {
-            if (proposal == null) 
-                return BadRequest("Proposal data is required.");
+            try
+            {
+                if (proposal == null) 
+                    return BadRequest("Proposal data is required.");
 
-            var created = await _proposalService.CreateAsync(proposal);
-            if (created == null) 
-                return NotFound("Lead not found.");
+                var created = await _proposalService.CreateAsync(proposal);
+                if (created == null) 
+                    return NotFound("Lead not found.");
 
-            return CreatedAtAction(nameof(GetById), new { id = created.ProposalID }, created);
+                return CreatedAtAction(nameof(GetById), new { id = created.ProposalID }, created);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet]
@@ -48,12 +56,19 @@ namespace WebApplication1.Controller
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] Proposal proposal)
         {
-            proposal.ProposalID = id;
+            try
+            {
+                proposal.ProposalID = id;
 
-            var updated = await _proposalService.UpdateAsync(proposal);
-            if (updated == null) return NotFound();
+                var updated = await _proposalService.UpdateAsync(proposal);
+                if (updated == null) return NotFound();
 
-            return Ok(updated);
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("{proposalId}/add-product/{productId}")]
@@ -77,6 +92,10 @@ namespace WebApplication1.Controller
             {
                 await _proposalService.FinalizeProposalAsync(proposalId);
                 return Ok();
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
