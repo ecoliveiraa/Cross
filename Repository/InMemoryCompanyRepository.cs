@@ -22,14 +22,14 @@ namespace WebApplication1.Repository
         public Task<Company> GetByIdAsync(Guid id) =>
             Task.FromResult(_companies.FirstOrDefault(c => c.Id == id));
 
-        public Task<Company> UpdateAsync(Company company)
+        public Task<Company> UpdateAsync(Company company) 
         {
             var existing = _companies.FirstOrDefault(c => c.Id == company.Id);
-            if (existing != null)
-            {
-                _companies[_companies.IndexOf(existing)] = company;
-            }
-            return Task.FromResult(company);
+            
+            
+              _companies[_companies.IndexOf(existing)] = company;
+            
+            return Task.FromResult(company); 
         }
     }
 }

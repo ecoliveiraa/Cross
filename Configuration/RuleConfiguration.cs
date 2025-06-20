@@ -19,7 +19,7 @@ namespace WebApplication1.Configuration
                 true, 
                 "BusinessType is required when lead is Active");
 
-            // PROPOSAL RULES
+            //Propopsal RULES
             ruleManager.SetRequired<Proposal>("ProductionCost", 
                 proposal => proposal.Status != "Draft", 
                 true, 
@@ -33,6 +33,7 @@ namespace WebApplication1.Configuration
                 proposal => proposal.Status == "Finalized", 
                 true, 
                 "At least one product is required to finalize proposal");
+
         }
     }
 }

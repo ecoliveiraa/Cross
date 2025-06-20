@@ -20,15 +20,18 @@ namespace WebApplication1.Services
 
         public async Task<Company> CreateAsync(Company company)
         {
-            //Dynamic validation using IRuleManager
+            if (company == null)
+                throw new ValidationException("Company data is required.");
+
+            // Igonore Id from client, generate new one | double validation
+            company.Id = Guid.NewGuid();
+
+            // Dynamic validation using IRuleManager - ValidationException = 400 Bad Request
             var validationResult = _ruleManager.Validate(company);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException(string.Join(", ", validationResult.Errors));
             }
-
-            if (company.Id == Guid.Empty)
-                company.Id = Guid.NewGuid();
 
             return await _companyRepository.CreateAsync(company);
         }
@@ -40,21 +43,29 @@ namespace WebApplication1.Services
 
         public async Task<Company> GetByIdAsync(Guid id)
         {
-            return await _companyRepository.GetByIdAsync(id);
+            var company = await _companyRepository.GetByIdAsync(id);
+            if (company == null)
+                throw new NotFoundException($"Company with ID {id} not found.");
+            
+            return company;
         }
 
         public async Task<Company> UpdateAsync(Company company)
         {
-            //Dynamic validation using IRuleManager on Update too
+            if (company == null)
+                throw new ValidationException("Company data is required.");
+
+            // Verify if company exists before validations
+            var existing = await _companyRepository.GetByIdAsync(company.Id);
+            if (existing == null)
+                throw new NotFoundException($"Company with ID {company.Id} not found.");
+
+            // Dynamic validation using IRuleManager on Update too
             var validationResult = _ruleManager.Validate(company);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException(string.Join(", ", validationResult.Errors));
             }
-
-            var existing = await _companyRepository.GetByIdAsync(company.Id);
-            if (existing == null)
-                return null;
                 
             return await _companyRepository.UpdateAsync(company);
         }

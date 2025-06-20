@@ -31,37 +31,38 @@ namespace WebApplication1.Services
 
         public async Task<Proposal> CreateAsync(Proposal proposal)
         {
-            // VALIDAÇÃO DINÂMICA
+            if (proposal == null)
+                throw new ValidationException("Proposal data is required.");
+
+            //Ignore ProposalID from client, generate new one | double validation
+            proposal.ProposalID = Guid.NewGuid();
+
+            
+            var lead = await _leadService.GetByIdAsync(proposal.LeadID);
+
+            //dinamic validation using IRuleManager - ValidationException = 400 Bad Request
             var validationResult = _ruleManager.Validate(proposal);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException(string.Join(", ", validationResult.Errors));
             }
 
-            // Validação: verificar se o Lead existe
-            var lead = await _leadService.GetByIdAsync(proposal.LeadID);
-            if (lead == null)
-                return null;
-
-            // Garantir que tem ID
-            if (proposal.ProposalID == Guid.Empty)
-                proposal.ProposalID = Guid.NewGuid();
-
             var created = await _proposalRepository.CreateAsync(proposal);
 
-            // Lógica de negócio: atualizar status do Lead para "Finalized"
-            if (created != null)
-            {
-                lead.Status = "Finalized";
-                await _leadService.UpdateAsync(lead);
-            }
+            //Business logic: update lead status to "Finalized" after proposal creation
+            lead.Status = "Finalized";
+            await _leadService.UpdateAsync(lead);
 
             return created;
         }
 
         public async Task<Proposal> GetByIdAsync(Guid id)
         {
-            return await _proposalRepository.GetByIdAsync(id);
+            var proposal = await _proposalRepository.GetByIdAsync(id);
+            if (proposal == null)
+                throw new NotFoundException($"Proposal with ID {id} not found.");
+            
+            return proposal;
         }
 
         public async Task<List<Proposal>> GetAllAsync()
@@ -71,76 +72,96 @@ namespace WebApplication1.Services
 
         public async Task<Proposal> UpdateAsync(Proposal proposal)
         {
-            // VALIDAÇÃO DINÂMICA também no UPDATE
+            if (proposal == null)
+                throw new ValidationException("Proposal data is required.");
+
+            // Verify if proposal exists before validations
+            var existing = await _proposalRepository.GetByIdAsync(proposal.ProposalID);
+            if (existing == null)
+                throw new NotFoundException($"Proposal with ID {proposal.ProposalID} not found.");
+
+            // Dynamic validation using IRuleManager on Update too
             var validationResult = _ruleManager.Validate(proposal);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException(string.Join(", ", validationResult.Errors));
             }
 
-            // Validação se existe
-            var existing = await _proposalRepository.GetByIdAsync(proposal.ProposalID);
-            if (existing == null)
-                return null;
-
             return await _proposalRepository.UpdateAsync(proposal);
         }
 
         public async Task AddProductAsync(Guid proposalId, Guid productId)
         {
-            var proposal = await _proposalRepository.GetByIdAsync(proposalId);
+           // GEtByIdAsync will throw NotFoundException if it does not exist
+            var proposal = await GetByIdAsync(proposalId);
             var product = await _productService.GetByIdAsync(productId);
 
-            if (proposal == null || product == null)
-                throw new Exception("Proposal or Product not found");
+            //Verify if product already exists
+            if (proposal.ProductIDs.Contains(productId))
+                throw new ValidationException("Product already exists in this proposal.");
 
-            // Validação: verificar se produto dependente existe
-            if (product.DependentProductId.HasValue)
+           //Verify if dependent product exists
+            if (product.DependentProductId.HasValue) 
             {
                 var requiredProduct = await _productService.GetByIdAsync(product.DependentProductId.Value);
-                if (requiredProduct == null || !proposal.ProductIDs.Contains(requiredProduct.ProductID))
-                    throw new Exception("Missing required dependent product");
+                if (!proposal.ProductIDs.Contains(requiredProduct.ProductID))
+                    throw new ValidationException("Missing required dependent product. Add the dependent product first.");
 
                 if (requiredProduct.ProductType != product.ProductType)
-                    throw new Exception("Dependent product type mismatch");
+                    throw new ValidationException("Dependent product type mismatch.");
             }
 
-            // Adicionar produto se ainda não existe
-            if (!proposal.ProductIDs.Contains(productId))
-            {
-                proposal.ProductIDs.Add(productId);
-                await _proposalRepository.UpdateAsync(proposal);
-            }
+            // Add product to proposal
+            proposal.ProductIDs.Add(productId);
+            await _proposalRepository.UpdateAsync(proposal);
         }
 
         public async Task FinalizeProposalAsync(Guid proposalId)
         {
-            var proposal = await _proposalRepository.GetByIdAsync(proposalId);
-            if (proposal == null)
-                throw new Exception("Proposal not found");
-
-            // Atualizar status da proposal
-            proposal.Status = "Finalized";
             
-            // VALIDAÇÃO DINÂMICA antes de finalizar
-            var validationResult = _ruleManager.Validate(proposal);
+            var proposal = await GetByIdAsync(proposalId);
+
+            //Make a copy of the proposal for validation
+            var proposalForValidation = new Proposal
+            {
+                ProposalID = proposal.ProposalID,
+                LeadID = proposal.LeadID,
+                ProductIDs = proposal.ProductIDs,
+                ProductionCost = proposal.ProductionCost,
+                MonthlyProducedProducts = proposal.MonthlyProducedProducts,
+                ExpectedMonthlyProfit = proposal.ExpectedMonthlyProfit,
+                Status = "Finalized" // Status for validation
+            };
+
+            // Dynamic validation using IRuleManager and Proposal copy
+            var validationResult = _ruleManager.Validate(proposalForValidation);
             if (!validationResult.IsValid)
             {
                 throw new ValidationException($"Cannot finalize proposal: {string.Join(", ", validationResult.Errors)}");
             }
 
-            await _proposalRepository.UpdateAsync(proposal);
-
-            // Atualizar status da company para "Active"
-            var lead = await _leadService.GetByIdAsync(proposal.LeadID);
-            if (lead != null)
+            // if proposal copy was valid, proceed with finalization
+            try
             {
+                // Update proposal status to "Finalized"
+                proposal.Status = "Finalized";
+                await _proposalRepository.UpdateAsync(proposal);
+
+                //Update company status to "Active"
+                var lead = await _leadService.GetByIdAsync(proposal.LeadID);
                 var company = await _companyService.GetByIdAsync(lead.CompanyId);
-                if (company != null)
-                {
-                    company.Status = "Active";
-                    await _companyService.UpdateAsync(company);
-                }
+                company.Status = "Active";
+                await _companyService.UpdateAsync(company);
+            }
+            catch (Exception)
+            {
+                //in the event of an error, it would be ideal to perform a rollback
+                //but with inmemory storage, we do not have transactions
+                //during production you would use a database transaction
+                //throwing a generic exception to indicate failure
+
+
+                throw new Exception("Failed to finalize proposal. Please try again.");
             }
         }
     }

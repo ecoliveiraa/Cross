@@ -45,7 +45,7 @@ namespace WebApplication1.Tests
             var company = new Company
             {
                 Country = "Portugal",
-                NIF = "", // ← Vazio!
+                NIF = "", // ← Empty!
                 Address = "Lisboa",
                 Stakeholder = "João",
                 Contact = "joao@test.pt"
@@ -66,8 +66,8 @@ namespace WebApplication1.Tests
             // Arrange
             var company = new Company
             {
-                Country = "Spain",
-                NIF = "", // ← Vazio mas OK porque não é Portugal
+                Country = "Spain",Spain
+                NIF = "", // ← Empty but OK for 
                 Address = "Madrid",
                 Stakeholder = "Carlos",
                 Contact = "carlos@test.es"
@@ -88,7 +88,7 @@ namespace WebApplication1.Tests
             var lead = new Lead
             {
                 CompanyId = Guid.NewGuid(),
-                BusinessType = "", // ← Vazio!
+                BusinessType = "", // Empty with status "Active" should fail
                 Status = "Active"
             };
 
@@ -108,7 +108,7 @@ namespace WebApplication1.Tests
             var lead = new Lead
             {
                 CompanyId = Guid.NewGuid(),
-                BusinessType = "", // ← Vazio mas OK porque é Draft
+                BusinessType = "", // ← Emptyo on Draft status should pass
                 Status = "Draft"
             };
 

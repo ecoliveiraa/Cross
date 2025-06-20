@@ -26,10 +26,9 @@ namespace WebApplication1.Repository
         public Task<Proposal> UpdateAsync(Proposal proposal)
         {
             var existing = _proposals.FirstOrDefault(p => p.ProposalID == proposal.ProposalID);
-            if (existing != null)
-            {
-                _proposals[_proposals.IndexOf(existing)] = proposal; // Substituição completa
-            }
+            
+            _proposals[_proposals.IndexOf(existing)] = proposal; 
+            
             return Task.FromResult(proposal);
         }
     }

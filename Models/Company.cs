@@ -7,7 +7,7 @@ namespace WebApplication1.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         
-        public string? NIF { get; set; }  // ← Nullable - só obrigatório se Portugal
+        public string? NIF { get; set; }  // ← Nullable jsut mandatory if Country is Portugal
         
         [Required]
         public string Address { get; set; }

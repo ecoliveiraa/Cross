@@ -14,5 +14,6 @@ namespace WebApplication1.Models
         
         public string? BusinessType { get; set; }  // ← Nullable just mandatory is status = "Active"
         public string Status { get; set; } = "Draft";
+
     }
 }

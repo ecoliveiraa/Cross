@@ -53,11 +53,17 @@ namespace WebApplication1.Validation
             return result;
         }
 
-        private bool IsFieldEmpty(object value)
-        {
-            if (value == null) return true;
-            if (value is string str) return string.IsNullOrWhiteSpace(str);
-            return false;
-        }
+      private bool IsFieldEmpty(object value)
+      {
+          if (value == null) return true;
+          if (value is string str) return string.IsNullOrWhiteSpace(str);
+          if (value is Guid guid) return guid == Guid.Empty;
+          if (value is int intVal) return intVal == 0;
+          if (value is decimal decVal) return decVal == 0;
+
+          if (value is System.Collections.ICollection collection) return collection.Count == 0;
+          
+          return false;
+      }
     }
 }

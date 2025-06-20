@@ -31,10 +31,12 @@ namespace WebApplication1.Repository
         public Task<Lead> UpdateAsync(Lead lead)
         {
             var existing = _leads.FirstOrDefault(l => l.LeadID == lead.LeadID);
+
             if (existing != null)
             {
-                _leads[_leads.IndexOf(existing)] = lead; // Substituição completa
+                _leads[_leads.IndexOf(existing)] = lead;
             }
+
             return Task.FromResult(lead);
         }
     }

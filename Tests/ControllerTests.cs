@@ -61,7 +61,7 @@ namespace WebApplication1.Tests
             Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
             
             var responseContent = await response.Content.ReadAsStringAsync();
-            Assert.IsNotEmpty(responseContent);
+            Assert.IsNotEmpty(responseContent); 
         }
 
         [Test]
@@ -71,7 +71,7 @@ namespace WebApplication1.Tests
             var company = new
             {
                 country = "Portugal",
-                nif = "", // ← Vazio para Portugal - deve falhar
+                nif = "", // ← Empty NIF for Portugal should return BadRequest for Portugal
                 address = "Rua das Flores, Lisboa",
                 stakeholder = "João Silva",
                 contact = "joao@empresa.pt"
@@ -97,7 +97,7 @@ namespace WebApplication1.Tests
             var company = new
             {
                 country = "Spain",
-                nif = "", // ← Vazio mas OK porque não é Portugal
+                nif = "", // ← Empty NIF for Spain should return OK
                 address = "Calle Mayor, Madrid",
                 stakeholder = "Carlos Lopez",
                 contact = "carlos@empresa.es"
@@ -129,7 +129,7 @@ namespace WebApplication1.Tests
         [Test]
         public async Task CreateLead_ActiveWithoutBusinessType_Returns400()
         {
-            // Arrange - Primeiro criar uma company
+            // Arrange - Create a company first
             var company = new
             {
                 country = "Portugal",
@@ -143,16 +143,16 @@ namespace WebApplication1.Tests
             var companyContent = new StringContent(companyJson, Encoding.UTF8, "application/json");
             var companyResponse = await _client.PostAsync("/api/company", companyContent);
             
-            // Extrair ID da resposta (simplificado)
+          
             var companyResponseContent = await companyResponse.Content.ReadAsStringAsync();
             var companyResult = JsonSerializer.Deserialize<JsonElement>(companyResponseContent);
             var companyId = companyResult.GetProperty("id").GetString();
 
-            // Criar lead inválido
+           //Create invalid lead
             var lead = new
             {
                 companyId = companyId,
-                businessType = "", // ← Vazio com status Active - deve falhar
+                businessType = "", // ← Empty BusinessType with Active status should return BadRequest
                 status = "Active"
             };
 
@@ -172,7 +172,7 @@ namespace WebApplication1.Tests
         [Test]
         public async Task CreateLead_DraftWithoutBusinessType_Returns201()
         {
-            // Arrange - Primeiro criar uma company
+            // Arrange - create a company first
             var company = new
             {
                 country = "Spain",
@@ -190,11 +190,11 @@ namespace WebApplication1.Tests
             var companyResult = JsonSerializer.Deserialize<JsonElement>(companyResponseContent);
             var companyId = companyResult.GetProperty("id").GetString();
 
-            // Criar lead válido
+            // Criar valid lead
             var lead = new
             {
                 companyId = companyId,
-                businessType = "", // ← Vazio mas OK porque é Draft
+                businessType = "", // ← Empty BusinessType with Draft status should return OK
                 status = "Draft"
             };
 

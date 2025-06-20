@@ -18,18 +18,17 @@ namespace WebApplication1.Repository
         }
 
         public Task<Product> GetByIdAsync(Guid id) =>
-            Task.FromResult(_products.FirstOrDefault(p => p.ProductID == id));
+            Task.FromResult(_products.FirstOrDefault(p => p.ProductID == id)); 
 
         public Task<List<Product>> GetAllAsync() => 
             Task.FromResult(_products);
 
         public Task<Product> UpdateAsync(Product product)
         {
-            var existing = _products.FirstOrDefault(p => p.ProductID == product.ProductID);
-            if (existing != null)
-            {
-                _products[_products.IndexOf(existing)] = product; // Substituição completa
-            }
+            var existing = _products.FirstOrDefault(p => p.ProductID == product.ProductID); 
+            
+             _products[_products.IndexOf(existing)] = product; 
+            
             return Task.FromResult(product);
         }
     }
