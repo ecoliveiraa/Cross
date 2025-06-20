@@ -66,8 +66,8 @@ namespace WebApplication1.Tests
             // Arrange
             var company = new Company
             {
-                Country = "Spain",Spain
-                NIF = "", // ← Empty but OK for 
+                Country = "Spain",
+                NIF = "", // ← Empty but OK for Spain
                 Address = "Madrid",
                 Stakeholder = "Carlos",
                 Contact = "carlos@test.es"
