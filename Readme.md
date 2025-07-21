@@ -66,4 +66,4 @@ Sem Duplicação: Country herdado via referências (Lead → Company, Proposal �
 Dados InMemory: Persistem durante execução da aplicação
 API REST: Documentada com Swagger
 
-Desenvolvido para Programming Challenge - Crossjoin
+Desenvolvido para Programming Challenge 
